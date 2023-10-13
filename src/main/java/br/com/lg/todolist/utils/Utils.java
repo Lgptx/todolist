@@ -34,4 +34,17 @@ public class Utils {
         String[] result = new String[emptyNames.size()];
         return emptyNames.toArray(result);
     }
+    
+    public static String removeDoubleQuotes(String input){
+
+        StringBuilder sb = new StringBuilder();
+        
+        char[] tab = input.toCharArray();
+        for( char current : tab ){
+            if( current != '"' )
+                sb.append( current );	
+        }
+        
+        return sb.toString();
+    }
 }

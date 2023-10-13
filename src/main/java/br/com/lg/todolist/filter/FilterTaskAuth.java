@@ -12,6 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import br.com.lg.todolist.users.IUserRepository;
+import br.com.lg.todolist.utils.Utils;
 
 
 @Component
@@ -27,21 +28,26 @@ public class FilterTaskAuth extends OncePerRequestFilter{
         var serveletPath = request.getServletPath();
         if(serveletPath.startsWith("/tasks/")){
 
-           var authString = new String(Base64.getDecoder().decode(request.getHeader("Authorization")
-           .substring("Basic".length()).trim()));
+           var authorization = request.getHeader("Authorization");
+           var user_passEncoded = authorization.substring("Basic".length()).trim(); 
+           byte[] user_passDecoded = Base64.getDecoder().decode(user_passEncoded); 
 
+           var authString = new String(user_passDecoded);
            String[] credentials = authString.split(":");
-        
-           var user = this.userRepository.findByUsername(credentials[0]); 
-           if(user == null ){
+           String username = credentials[0];
+           String password = credentials[1]; 
+           var userNoQuotes = Utils.removeDoubleQuotes(username);
+           var user = this.userRepository.findByUsername(userNoQuotes);
+
+            if(user == null ){
                 response.sendError(401, "Usuário sem Autorização"); 
            }else{
-                
-                var passVerify = BCrypt.verifyer().verify(credentials[1].toCharArray(),user.getPassword());
-                
+                var passVerify = BCrypt.verifyer().verify(password.toCharArray(),user.getPassword());
                 if(passVerify.verified){
+
                     request.setAttribute("idUser", user.getId());
                     filterChain.doFilter(request, response);
+   
                 }else{
                     response.sendError(401, "Senhas não conferem"); 
                 }

@@ -30,8 +30,7 @@ public class TaskController {
     public ResponseEntity create(@RequestBody TaskModel taskModel, HttpServletRequest request){
         var idUser = request.getAttribute("idUser");      
         taskModel.setIdUser((UUID)idUser);
-        
-
+           
             var currentDate = LocalDateTime.now();
             if(currentDate.isAfter(taskModel.getStartAt()) || currentDate.isAfter(taskModel.getEndAt())){
                 ResponseEntity.status(HttpStatus.BAD_REQUEST).body("A Data de inicio e Fim deve ser maior que a atual");
@@ -51,13 +50,16 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")    
-    public TaskModel update(@RequestBody TaskModel taskModel, HttpServletRequest request, @PathVariable UUID id){
+    public ResponseEntity update(@RequestBody TaskModel taskModel, HttpServletRequest request, @PathVariable UUID id){
         taskModel.setIdUser((UUID) request.getAttribute("idUser"));
-        
         var task = this.taskRepository.findById(id).orElse(null);
-        Utils.copyNonNullProperties(taskModel, task);
-
-        return this.taskRepository.save(task);
+        var idUser = request.getAttribute("idUser");
+            if (!task.getIdUser().equals(idUser) || task == null) {
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Não foi possivel encontrar a Task originária.");
+            }
+                Utils.copyNonNullProperties(taskModel, task);
+                this.taskRepository.save(task);
+        return ResponseEntity.status(HttpStatus.OK).body(task);
     }
 }
 
